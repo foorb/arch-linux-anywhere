@@ -50,7 +50,7 @@ fi
 
 # Link to the iso used to create Arch Anywhere
 echo "Checking for updated ISO..."
-export archiso_link=$(lynx -dump $(lynx -dump http://arch.localmsp.org/arch/iso | grep "8\. " | awk '{print $2}') | grep "7\. " | awk '{print $2}')
+export archiso_link="http://mirror.rackspace.com/archlinux/iso/2017.01.01/archlinux-2017.01.01-dual.iso"
 
 if [ -z "$archiso_link" ]; then
 	echo -e "ERROR: archiso link not found\nRequired for updating archiso.\nPlease install 'lynx' to resolve this issue"
