@@ -14,7 +14,7 @@ update=false
 
 # Check depends
 
-if [ ! -f /usr/bin/7z ] || [ ! -f /usr/bin/mksquashfs ] || [ ! -f /usr/bin/xorriso ] || [ ! -f /usr/bin/wget ] || [ ! -f /usr/bin/arch-chroot ] || [ ! -f /usr/bin/grep ] || [ ! -f /usr/bin/awk ]; then
+if [ ! -f /usr/bin/7z ] || [ ! -f /usr/bin/mksquashfs ] || [ ! -f /usr/bin/xorriso ] || [ ! -f /usr/bin/wget ] || [ ! -f /usr/bin/arch-chroot ] || [ ! -f /usr/bin/grep ] || [ ! -f /usr/bin/awk ] || [ ! -f /usr/bin/lynx ]; then
 	depends=false
 	until "$depends"
 	  do
@@ -31,6 +31,7 @@ if [ ! -f /usr/bin/7z ] || [ ! -f /usr/bin/mksquashfs ] || [ ! -f /usr/bin/xorri
 				if [ ! -f /usr/bin/arch-chroot ]; then query="$query arch-install-scripts"; fi
 				if [ ! -f /usr/bin/grep ]; then query="$query grep"; fi
 				if [ ! -f /usr/bin/awk ]; then query="$query awk"; fi
+				if [ ! -f /usr/bin/lynx ]; then query="$query lynx"; fi
 				sudo pacman -Syy $(echo "$query")
 				depends=true
 			;;
@@ -62,7 +63,7 @@ if [ "$iso_ver" != "$iso" ]; then
 	if [ -z "$iso" ]; then
 		echo -en "\nNo archiso found under $aa\nWould you like to download now? [y/N]: "
 		read input
-    
+
 		case "$input" in
 			y|Y|yes|Yes|yY|Yy|yy|YY) update=true
 			;;
@@ -73,7 +74,7 @@ if [ "$iso_ver" != "$iso" ]; then
 	else
 		echo -en "An updated verison of the archiso is available for download\n'$iso_ver'\nDownload now? [y/N]: "
 		read input
-		
+
 		case "$input" in
 			y|Y|yes|Yes|yY|Yy|yy|YY) update=true
 			;;
@@ -82,7 +83,7 @@ if [ "$iso_ver" != "$iso" ]; then
 			;;
 		esac
 	fi
-	
+
 	if "$update" ; then
 		cd "$aa"
 		wget "$archiso_link"
@@ -95,11 +96,11 @@ if [ "$iso_ver" != "$iso" ]; then
 fi
 
 init() {
-	
+
 	if [ -d "$customiso" ]; then
 		sudo rm -rf "$customiso"
 	fi
-	
+
 	# Extract archiso to mntdir and continue with build
 	7z x "$iso" -o"$customiso"
 	builds
@@ -130,13 +131,13 @@ builds() {
 }
 
 prepare_x86_64() {
-	
+
 ### Change directory into the ISO where the filesystem is stored.
 ### Unsquash root filesystem 'airootfs.sfs' this creates a directory 'squashfs-root' containing the entire system
 	echo "Preparing x86_64..."
 	cd "$customiso"/arch/x86_64
 	sudo unsquashfs airootfs.sfs
-	
+
 ### Install fonts onto system and cleanup
 	sudo pacman --root squashfs-root --cachedir squashfs-root/var/cache/pacman/pkg  --config squashfs-root/etc/pacman.conf --noconfirm -Syyy terminus-font
 	sudo pacman --root squashfs-root --cachedir squashfs-root/var/cache/pacman/pkg  --config squashfs-root/etc/pacman.conf --noconfirm -U /tmp/fetchmirrors/*.pkg.tar.xz
@@ -144,11 +145,11 @@ prepare_x86_64() {
 	sudo pacman --root squashfs-root --cachedir squashfs-root/var/cache/pacman/pkg  --config squashfs-root/etc/pacman.conf -Sl | awk '/\[installed\]$/ {print $1 "/" $2 "-" $3}' > "$customiso"/arch/pkglist.x86_64.txt
 	sudo pacman --root squashfs-root --cachedir squashfs-root/var/cache/pacman/pkg  --config squashfs-root/etc/pacman.conf --noconfirm -Scc
 	sudo rm -f "$customiso"/arch/x86_64/squashfs-root/var/cache/pacman/pkg/*
-	
+
 ### Copy over vconsole.conf (sets font at boot) & locale.gen (enables locale(s) for font)
 	sudo cp "$aa"/etc/{vconsole.conf,locale.gen} "$customiso"/arch/x86_64/squashfs-root/etc
 	sudo arch-chroot squashfs-root /bin/bash locale-gen
-	
+
 ### Copy over main arch anywhere config, installer script, and arch-wiki,  make executeable
 	sudo cp "$aa"/etc/arch-anywhere.conf "$customiso"/arch/x86_64/squashfs-root/etc/
 #	sudo cp "$aa"/etc/arch-anywhere.service "$customiso"/arch/x86_64/squashfs-root/usr/lib/systemd/system/
@@ -160,7 +161,7 @@ prepare_x86_64() {
 
 ### Create arch-anywhere directory and lang directory copy over all lang files
 	sudo mkdir -p "$customiso"/arch/x86_64/squashfs-root/usr/share/arch-anywhere/{lang,pkg}
-	sudo cp "$aa"/lang/* "$customiso"/arch/x86_64/squashfs-root/usr/share/arch-anywhere/lang	
+	sudo cp "$aa"/lang/* "$customiso"/arch/x86_64/squashfs-root/usr/share/arch-anywhere/lang
 
 ### Copy over extra files (dot files, desktop configurations, help file, issue file, hostname file)
 	sudo cp "$aa"/extra/{.zshrc,.help,.dialogrc} "$customiso"/arch/x86_64/squashfs-root/root/
@@ -188,13 +189,13 @@ prepare_x86_64() {
 }
 
 prepare_i686() {
-	
+
 	echo "Preparing i686..."
 	cd "$customiso"/arch/i686
 	sudo unsquashfs airootfs.sfs
 	sudo sed -i 's/\$arch/i686/g' squashfs-root/etc/pacman.d/mirrorlist
 	sudo sed -i 's/auto/i686/' squashfs-root/etc/pacman.conf
-	sudo setarch i686 pacman --root squashfs-root --cachedir squashfs-root/var/cache/pacman/pkg  --config squashfs-root/etc/pacman.conf --noconfirm -Syyy terminus-font 
+	sudo setarch i686 pacman --root squashfs-root --cachedir squashfs-root/var/cache/pacman/pkg  --config squashfs-root/etc/pacman.conf --noconfirm -Syyy terminus-font
 	sudo setarch i686 pacman --root squashfs-root --cachedir squashfs-root/var/cache/pacman/pkg  --config squashfs-root/etc/pacman.conf --noconfirm -U /tmp/fetchmirrors/*.pkg.tar.xz
 	sudo setarch i686 pacman --root squashfs-root --cachedir squashfs-root/var/cache/pacman/pkg  --config squashfs-root/etc/pacman.conf --noconfirm -U /tmp/arch-wiki-cli/*.pkg.tar.xz
 	sudo setarch i686 pacman --root squashfs-root --cachedir squashfs-root/var/cache/pacman/pkg  --config squashfs-root/etc/pacman.conf -Sl | awk '/\[installed\]$/ {print $1 "/" $2 "-" $3}' > "$customiso"/arch/pkglist.i686.txt
@@ -237,12 +238,12 @@ prepare_i686() {
 }
 
 configure_boot() {
-	
+
 	sudo mkdir "$customiso"/EFI/archiso/mnt
 	sudo mount -o loop "$customiso"/EFI/archiso/efiboot.img "$customiso"/EFI/archiso/mnt
 	sed -i "s/archisolabel=.*/archisolabel=$iso_label/" "$aa"/boot/iso/archiso-x86_64.CD.conf
 	sed -i "s/archisolabel=.*/archisolabel=$iso_label/" "$aa"/boot/iso/archiso-x86_64.conf
-	sed -i "s/archisolabel=.*/archisolabel=$iso_label/" "$aa"/boot/iso/archiso_sys64.cfg 
+	sed -i "s/archisolabel=.*/archisolabel=$iso_label/" "$aa"/boot/iso/archiso_sys64.cfg
 	sed -i "s/archisolabel=.*/archisolabel=$iso_label/" "$aa"/boot/iso/archiso_sys32.cfg
 	sudo cp "$aa"/boot/iso/archiso-x86_64.CD.conf "$customiso"/EFI/archiso/mnt/loader/entries/archiso-x86_64.conf
 	sudo umount "$customiso"/EFI/archiso/mnt
